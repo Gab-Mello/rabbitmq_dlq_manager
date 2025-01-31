@@ -1,0 +1,18 @@
+version: '3.9'
+
+services:
+  postgres:
+    container_name: 'postgres'
+    image: 'postgres:latest'
+    environment:
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: dlq_db
+    ports:
+      - '5432:5432'
+
+  rabbitMQ:
+    container_name: "rabbitMQ"
+    image: 'rabbitmq:3-management'
+    ports:
+      - '5672:5672'
+      - '15672:15672'
