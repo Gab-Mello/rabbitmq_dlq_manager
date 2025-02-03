@@ -15,7 +15,6 @@
   - Reprocess messages from the DLQ to the main queue.
   - Discard unwanted messages.
 - **Monitoring:**
-  - Integration with Prometheus and Grafana for queue and message monitoring.
   - Metrics such as the number of messages in the DLQ, reprocessing rate, and average time of messages in the DLQ.
 - **API Documentation:** Automatic API documentation with Swagger for easy use of REST APIs.
 
@@ -25,5 +24,4 @@
 - **Framework:** Spring Boot 3.4.2
 - **Message Broker:** RabbitMQ
 - **Database:** PostgreSQL
-- **Monitoring:** Prometheus and Grafana
 - **API Documentation:** SpringDoc OpenAPI (Swagger)
