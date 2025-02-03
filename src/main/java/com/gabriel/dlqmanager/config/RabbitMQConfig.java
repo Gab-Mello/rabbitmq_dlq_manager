@@ -21,12 +21,16 @@ public class RabbitMQConfig {
     private String dlqQueue;
 
     @Value("${rabbitmq.exchange.main}")
-    private String exchange;
+    private String mainExchange;
+
+    @Value("${rabbitmq.exchange.dlq}")
+    private String dlqExchange;
+
 
     @Bean
     public Queue mainQueue(){
         return QueueBuilder.durable(mainQueue)
-                .deadLetterExchange("")
+                .deadLetterExchange(dlqExchange)
                 .deadLetterRoutingKey(dlqQueue)
                 .ttl(10000)
                 .build();
@@ -39,8 +43,11 @@ public class RabbitMQConfig {
 
     @Bean
     public DirectExchange mainExchange(){
-        return ExchangeBuilder.directExchange(exchange).build();
+        return ExchangeBuilder.directExchange(mainExchange).build();
     }
+
+    @Bean
+    public DirectExchange dlqExchange(){return ExchangeBuilder.directExchange(dlqExchange).build();}
 
     @Bean
     public Binding mainQueueBinding(){
@@ -49,7 +56,7 @@ public class RabbitMQConfig {
 
     @Bean
     public Binding dlqQueueBinding(){
-        return BindingBuilder.bind(dlqQueue()).to(mainExchange()).with(dlqQueue);
+        return BindingBuilder.bind(dlqQueue()).to(dlqExchange()).with(dlqQueue);
     }
 
     @Bean

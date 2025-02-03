@@ -4,7 +4,7 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
 
 @Service
-public class RabbitMQConsumer {
+public class MainConsumer {
 
     @RabbitListener(queues = "${rabbitmq.queue.main}")
     public void processMessage(String message){
