@@ -6,6 +6,8 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -66,8 +68,8 @@ public class DLQService {
         return "Message reprocessed!";
     }
 
-    public List<DlqMessage> findAll(){
-        return dlqMessageRepository.findAll();
+    public Page<DlqMessage> findAll(String reason, String queue, boolean reprocessed, int page, int size){
+        return dlqMessageRepository.findMessagesWithFilters(reason, queue, reprocessed, PageRequest.of(page, size));
     }
 
 }
