@@ -56,20 +56,44 @@ public class DLQService {
 
     public String reprocessDlqMessage(Long id){
         DlqMessage dlqMessage = dlqMessageRepository.findById(id).orElseThrow(EntityNotFoundException::new);
-        System.out.println(id);
+
         if (dlqMessage.isReprocessed()){
             return "Message already reprocessed!";
         }
 
-        rabbitMQProducer.sendMessage("success");
-        dlqMessage.setReprocessed(true);
-        dlqMessageRepository.save(dlqMessage);
+        reprocess(dlqMessage, "success");
 
         return "Message reprocessed!";
+    }
+
+    public String reprocessListOfDlqMessages(List<Long> ids){
+        List<DlqMessage> dlqMessages = dlqMessageRepository.findAllById(ids);
+
+        for (DlqMessage dlqMessage : dlqMessages){
+            if (!dlqMessage.isReprocessed()){
+                reprocess(dlqMessage, "success");
+
+            }
+        }
+        return "All messages in the list reprocessed!";
     }
 
     public Page<DlqMessage> findAll(String reason, String queue, boolean reprocessed, int page, int size){
         return dlqMessageRepository.findMessagesWithFilters(reason, queue, reprocessed, PageRequest.of(page, size));
     }
 
+    public String reprocessAllMessages(){
+        dlqMessageRepository.findAll().forEach(dlqMessage -> {
+            if (!dlqMessage.isReprocessed()){
+                reprocess(dlqMessage, "success");
+            }
+        });
+        return "All messages reprocessed!";
+    }
+
+    public void reprocess(DlqMessage dlqMessage, String message){
+        rabbitMQProducer.sendMessage(message);
+        dlqMessage.setReprocessed(true);
+        dlqMessageRepository.save(dlqMessage);
+    }
 }

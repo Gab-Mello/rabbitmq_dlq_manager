@@ -28,7 +28,16 @@ public class DlqController {
 
     @PostMapping("/reprocess/{id}")
     public String reprocessDlqMessage(@PathVariable Long id){
-        System.out.println(id);
         return dlqService.reprocessDlqMessage(id);
+    }
+
+    @PostMapping("/reprocess-list")
+    public String reprocessListOfDlqMessages(List<Long> ids){
+        return dlqService.reprocessListOfDlqMessages(ids);
+    }
+
+    @PostMapping("/reprocess-all")
+    public String reprocessAllMessages(){
+        return dlqService.reprocessAllMessages();
     }
 }
