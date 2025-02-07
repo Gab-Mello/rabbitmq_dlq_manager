@@ -1,9 +1,7 @@
 package com.gabriel.dlqmanager.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import com.gabriel.dlqmanager.Enum.ReprocessStatus;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -30,7 +28,9 @@ public class DlqMessage {
 
     private int retryCount;
 
-    private boolean reprocessed;
-
     private LocalDateTime timestamp;
+
+    @Enumerated(EnumType.STRING)
+    private ReprocessStatus reprocessStatus;
+
 }

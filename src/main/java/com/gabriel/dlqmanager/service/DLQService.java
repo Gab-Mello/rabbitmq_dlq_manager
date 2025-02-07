@@ -1,5 +1,6 @@
 package com.gabriel.dlqmanager.service;
 
+import com.gabriel.dlqmanager.Enum.ReprocessStatus;
 import com.gabriel.dlqmanager.entity.DlqMessage;
 import com.gabriel.dlqmanager.repository.DlqMessageRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -25,7 +26,6 @@ public class DLQService {
 
     @RabbitListener(queues = "${rabbitmq.queue.dlq}")
     public void processDlqMessage(Message message){
-
         Map<String, Object> headers = message.getMessageProperties().getHeaders();
 
         String reason = null;
@@ -34,7 +34,6 @@ public class DLQService {
 
         if (headers.containsKey("x-death")){
             List<Map<String, Object>> xDeath = (List<Map<String, Object>>) headers.get("x-death");
-            System.out.println(message);
 
             if(!xDeath.isEmpty()){
                 Map<String, Object> deathDetails = xDeath.getFirst();
@@ -44,11 +43,11 @@ public class DLQService {
             }
         }
         DlqMessage dlqMessage = new DlqMessage();
-        dlqMessage.setMessagePayload(new String(message.getBody()));
+        dlqMessage.setMessagePayload(new String(message.getBody()).replace("\"", ""));
         dlqMessage.setReason(reason != null ? reason : "Unknown");
         dlqMessage.setOriginalQueue(originalQueue != null ? originalQueue : "Unknown");
         dlqMessage.setRetryCount(retryCount);
-        dlqMessage.setReprocessed(false);
+        dlqMessage.setReprocessStatus(ReprocessStatus.PENDING);
         dlqMessage.setTimestamp(LocalDateTime.now());
 
         dlqMessageRepository.save(dlqMessage);
@@ -57,11 +56,11 @@ public class DLQService {
     public String reprocessDlqMessage(Long id){
         DlqMessage dlqMessage = dlqMessageRepository.findById(id).orElseThrow(EntityNotFoundException::new);
 
-        if (dlqMessage.isReprocessed()){
+        if (dlqMessage.getReprocessStatus() != ReprocessStatus.PENDING){
             return "Message already reprocessed!";
         }
 
-        reprocess(dlqMessage, "success");
+        reprocess(dlqMessage, "fail");
 
         return "Message reprocessed!";
     }
@@ -70,30 +69,40 @@ public class DLQService {
         List<DlqMessage> dlqMessages = dlqMessageRepository.findAllById(ids);
 
         for (DlqMessage dlqMessage : dlqMessages){
-            if (!dlqMessage.isReprocessed()){
+            if (dlqMessage.getReprocessStatus() == ReprocessStatus.PENDING){
                 reprocess(dlqMessage, "success");
-
             }
         }
         return "All messages in the list reprocessed!";
     }
 
-    public Page<DlqMessage> findAll(String reason, String queue, boolean reprocessed, int page, int size){
-        return dlqMessageRepository.findMessagesWithFilters(reason, queue, reprocessed, PageRequest.of(page, size));
-    }
-
     public String reprocessAllMessages(){
-        dlqMessageRepository.findAll().forEach(dlqMessage -> {
-            if (!dlqMessage.isReprocessed()){
+        List<DlqMessage> dlqMessages = dlqMessageRepository.findAll();
+
+        for (DlqMessage dlqMessage : dlqMessages){
+            if (dlqMessage.getReprocessStatus() == ReprocessStatus.PENDING){
                 reprocess(dlqMessage, "success");
             }
-        });
+        };
         return "All messages reprocessed!";
     }
 
     public void reprocess(DlqMessage dlqMessage, String message){
-        rabbitMQProducer.sendMessage(message);
-        dlqMessage.setReprocessed(true);
-        dlqMessageRepository.save(dlqMessage);
+        try{
+            rabbitMQProducer.sendMessage(message);
+            dlqMessage.setReprocessStatus(ReprocessStatus.SUCCESS);
+            dlqMessageRepository.save(dlqMessage);
+        }
+        catch (Exception e){
+            dlqMessage.setReprocessStatus(ReprocessStatus.FAILED);
+            dlqMessageRepository.save(dlqMessage);
+            System.out.println("CAIU AQUI");
+        }
     }
+
+    public Page<DlqMessage> findAll(String reason, String queue, ReprocessStatus reprocessStatus, int page, int size){
+        return dlqMessageRepository.findMessagesWithFilters(reason, queue, reprocessStatus, PageRequest.of(page, size));
+    }
+
+
 }

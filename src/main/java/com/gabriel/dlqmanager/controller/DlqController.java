@@ -1,5 +1,6 @@
 package com.gabriel.dlqmanager.controller;
 
+import com.gabriel.dlqmanager.Enum.ReprocessStatus;
 import com.gabriel.dlqmanager.entity.DlqMessage;
 import com.gabriel.dlqmanager.service.DLQService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,11 +20,11 @@ public class DlqController {
     public Page<DlqMessage> listDlqMessages(
             @RequestParam(required = false) String reason,
             @RequestParam(required = false) String queue,
-            @RequestParam(required = false) boolean reprocessed,
+            @RequestParam(required = false) ReprocessStatus reprocessStatus,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ){
-        return dlqService.findAll(reason, queue, reprocessed, page, size);
+        return dlqService.findAll(reason, queue, reprocessStatus, page, size);
     }
 
     @PostMapping("/reprocess/{id}")
