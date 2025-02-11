@@ -20,12 +20,23 @@ public class RabbitMQConfig {
     @Value("${rabbitmq.queue.dlq}")
     private String dlqQueue;
 
+    @Value("${rabbitmq.queue.dlqReprocessingSucceeded}")
+    private String dlqReprocessingSucceededQueue;
+
+    @Value("${rabbitmq.queue.dlqReprocessingFailed}")
+    private String dlqReprocessingFailedQueue;
+
     @Value("${rabbitmq.exchange.main}")
     private String mainExchange;
 
     @Value("${rabbitmq.exchange.dlq}")
     private String dlqExchange;
 
+    @Value("${rabbitmq.exchange.dlqReprocessingSucceeded}")
+    private String dlqReprocessingSucceededExchange;
+
+    @Value("${rabbitmq.exchange.dlqReprocessingFailed}")
+    private String dlqReprocessingFailedExchange;
 
     @Bean
     public Queue mainQueue(){
@@ -42,12 +53,32 @@ public class RabbitMQConfig {
     }
 
     @Bean
+    public Queue dlqReprocessSucceedQueue(){
+        return QueueBuilder.durable(dlqReprocessingSucceededQueue).build();
+    }
+
+    @Bean
+    public Queue dlqReprocessFailedQueue(){
+        return QueueBuilder.durable(dlqReprocessingFailedQueue).build();
+    }
+
+    @Bean
     public DirectExchange mainExchange(){
         return ExchangeBuilder.directExchange(mainExchange).build();
     }
 
     @Bean
     public DirectExchange dlqExchange(){return ExchangeBuilder.directExchange(dlqExchange).build();}
+
+    @Bean
+    public DirectExchange dlqReprocessSucceedExchange(){
+        return ExchangeBuilder.directExchange(dlqReprocessingSucceededExchange).build();
+    }
+
+    @Bean
+    public DirectExchange dlqReprocessFailedExchange(){
+        return ExchangeBuilder.directExchange(dlqReprocessingFailedExchange).build();
+    }
 
     @Bean
     public Binding mainQueueBinding(){
@@ -57,6 +88,16 @@ public class RabbitMQConfig {
     @Bean
     public Binding dlqQueueBinding(){
         return BindingBuilder.bind(dlqQueue()).to(dlqExchange()).with(dlqQueue);
+    }
+
+    @Bean
+    public Binding dlqReprocessSucceedBinding(){
+        return BindingBuilder.bind(dlqReprocessSucceedQueue()).to(dlqReprocessSucceedExchange()).with(dlqReprocessingSucceededQueue);
+    }
+
+    @Bean
+    public Binding dlqReprocessFailedBinding(){
+        return BindingBuilder.bind(dlqReprocessFailedQueue()).to(dlqReprocessFailedExchange()).with(dlqReprocessingFailedQueue);
     }
 
     @Bean

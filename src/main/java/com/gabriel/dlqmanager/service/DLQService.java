@@ -22,7 +22,7 @@ public class DLQService {
     private DlqMessageRepository dlqMessageRepository;
 
     @Autowired
-    private RabbitMQProducer rabbitMQProducer;
+    private RabbitMQDlqProducer rabbitMQDlqProducer;
 
     @RabbitListener(queues = "${rabbitmq.queue.dlq}")
     public void processDlqMessage(Message message){
@@ -39,7 +39,6 @@ public class DLQService {
                 Map<String, Object> deathDetails = xDeath.getFirst();
                 reason = (String) deathDetails.get("reason");
                 originalQueue = (String) deathDetails.get("queue");
-                retryCount = ((Long) deathDetails.get("count")).intValue();
             }
         }
         DlqMessage dlqMessage = new DlqMessage();
@@ -49,9 +48,11 @@ public class DLQService {
         dlqMessage.setRetryCount(retryCount);
         dlqMessage.setReprocessStatus(ReprocessStatus.PENDING);
         dlqMessage.setTimestamp(LocalDateTime.now());
+        dlqMessage.setRetryCount(0);
 
         dlqMessageRepository.save(dlqMessage);
     }
+
 
     public String reprocessDlqMessage(Long id){
         DlqMessage dlqMessage = dlqMessageRepository.findById(id).orElseThrow(EntityNotFoundException::new);
@@ -89,14 +90,15 @@ public class DLQService {
 
     public void reprocess(DlqMessage dlqMessage, String message){
         try{
-            rabbitMQProducer.sendMessage(message);
-            dlqMessage.setReprocessStatus(ReprocessStatus.SUCCESS);
-            dlqMessageRepository.save(dlqMessage);
+            rabbitMQDlqProducer.sendDlqMessage(message, dlqMessage.getId());
         }
         catch (Exception e){
             dlqMessage.setReprocessStatus(ReprocessStatus.FAILED);
             dlqMessageRepository.save(dlqMessage);
             System.out.println("CAIU AQUI");
+        }
+        finally {
+            dlqMessageRepository.save(dlqMessage);
         }
     }
 
