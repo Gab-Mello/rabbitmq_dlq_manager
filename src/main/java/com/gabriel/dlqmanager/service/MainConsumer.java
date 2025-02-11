@@ -1,6 +1,7 @@
 package com.gabriel.dlqmanager.service;
 
 import com.rabbitmq.client.Channel;
+import jakarta.annotation.Nullable;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,28 +16,22 @@ public class MainConsumer {
 
     private final Random random = new Random();
 
+    @Autowired
+    private RabbitMQDlqFailedProducer rabbitMQDlqFailedProducer;
 
-    @RabbitListener(queues = "${rabbitmq.queue.main}")
-    public void processMessage(String message, @Header("messageID") Long messageID){
-        try{
-            System.out.println("Message received: " + message);
+    @Autowired
+    private RabbitMQDlqSuccessProducer rabbitMQDlqSuccessProducer;
 
-            if (random.nextInt(100) < 30 ) {
-                System.out.println("Error processing message: " + message);
+    @RabbitListener(queues = "${rabbitmq.queue.main}" )
+    public void processMessage(String message, @Nullable @Header("messageID") Long messageID){
 
-                throw new RuntimeException("Simulated processing error");
-            }
+        System.out.println("Message received: " + message);
 
-            if (messageID != null){
-                return;
-            }
-            
-            System.out.println("Message processed successfully: " + message);
-
-        } catch (Exception e) {
-            //deu merda
+        if (random.nextInt(100) > 10) {
+            System.out.println("error: " + message);
+            throw new RuntimeException("Erro no processamento da mensagem!");
         }
 
-    }
+    }}
 
-}
+

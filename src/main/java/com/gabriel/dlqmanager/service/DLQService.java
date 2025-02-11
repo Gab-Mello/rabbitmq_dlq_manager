@@ -28,6 +28,7 @@ public class DLQService {
     public void processDlqMessage(Message message){
         Map<String, Object> headers = message.getMessageProperties().getHeaders();
 
+        System.out.println("Pegou na fila da dlq");
         String reason = null;
         String originalQueue = null;
         int retryCount = 0;
