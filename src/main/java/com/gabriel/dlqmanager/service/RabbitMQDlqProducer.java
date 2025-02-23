@@ -17,9 +17,10 @@ public class RabbitMQDlqProducer {
     @Value("${rabbitmq.queue.main}")
     private String routingKey;
 
-    public void sendDlqMessage(String message, Long messageID){
+    public void sendDlqMessage(String message, Long messageId){
+        System.out.println("DLQ Producer message id: " + messageId);
         rabbitTemplate.convertAndSend(exchange, routingKey, message, msg -> {
-            msg.getMessageProperties().setHeader("messageId", messageID);
+            msg.getMessageProperties().setHeader("messageId", messageId);
             return msg;
         });
     }

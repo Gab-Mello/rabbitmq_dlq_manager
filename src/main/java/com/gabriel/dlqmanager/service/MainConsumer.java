@@ -3,6 +3,7 @@ package com.gabriel.dlqmanager.service;
 import com.rabbitmq.client.Channel;
 import jakarta.annotation.Nullable;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.amqp.rabbit.support.ListenerExecutionFailedException;
 import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.Header;
@@ -23,14 +24,33 @@ public class MainConsumer {
     private RabbitMQDlqSuccessProducer rabbitMQDlqSuccessProducer;
 
     @RabbitListener(queues = "${rabbitmq.queue.main}" )
-    public void processMessage(String message, @Nullable @Header("messageID") Long messageID){
+    public void processMessage(String message, @Nullable @Header("messageId") Long messageId){
 
-        System.out.println("Message received: " + message);
+            try {
+            System.out.println("Message received: " + message);
+            System.out.println("Message id: " + messageId);
 
-        if (random.nextInt(100) > 10) {
-            System.out.println("error: " + message);
-            throw new RuntimeException("Erro no processamento da mensagem!");
-        }
+            if (random.nextInt(100) > 1) {
+                System.out.println("error: " + message);
+                throw new RuntimeException("Erro no processamento da mensagem!");
+            }
+
+            if (messageId != null){
+                //Send a message to dlq succeed queue
+                rabbitMQDlqSuccessProducer.sendToSuccessQueue(messageId);
+            }
+
+            } catch (Exception e) {
+
+                if (e instanceof org.springframework.amqp.rabbit.support.ListenerExecutionFailedException ||
+                        e.getCause() instanceof org.springframework.amqp.rabbit.support.ListenerExecutionFailedException){
+
+                    System.out.println("ENTROUUUU: " + e);
+                }
+                else{
+                    throw e;
+                }
+            }
 
     }}
 

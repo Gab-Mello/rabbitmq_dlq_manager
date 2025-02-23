@@ -28,30 +28,42 @@ public class DLQService {
     public void processDlqMessage(Message message){
         Map<String, Object> headers = message.getMessageProperties().getHeaders();
 
-        System.out.println("Pegou na fila da dlq");
-        String reason = null;
-        String originalQueue = null;
-        int retryCount = 0;
+        System.out.println("HEADERS: "+ headers.get("messageId"));
 
-        if (headers.containsKey("x-death")){
-            List<Map<String, Object>> xDeath = (List<Map<String, Object>>) headers.get("x-death");
-
-            if(!xDeath.isEmpty()){
-                Map<String, Object> deathDetails = xDeath.getFirst();
-                reason = (String) deathDetails.get("reason");
-                originalQueue = (String) deathDetails.get("queue");
-            }
+        if (headers.get("messageId") != null){
+            Long messageId = (Long) headers.get("messageId");
+            DlqMessage dlqMessage = dlqMessageRepository.findById(messageId).orElseThrow(EntityNotFoundException::new);
+            dlqMessage.setReprocessStatus(ReprocessStatus.FAILED);
+            dlqMessageRepository.save(dlqMessage);
         }
-        DlqMessage dlqMessage = new DlqMessage();
-        dlqMessage.setMessagePayload(new String(message.getBody()).replace("\"", ""));
-        dlqMessage.setReason(reason != null ? reason : "Unknown");
-        dlqMessage.setOriginalQueue(originalQueue != null ? originalQueue : "Unknown");
-        dlqMessage.setRetryCount(retryCount);
-        dlqMessage.setReprocessStatus(ReprocessStatus.PENDING);
-        dlqMessage.setTimestamp(LocalDateTime.now());
-        dlqMessage.setRetryCount(0);
+        else {
 
-        dlqMessageRepository.save(dlqMessage);
+            String reason = null;
+            String originalQueue = null;
+            int retryCount = 0;
+
+            if (headers.containsKey("x-death")){
+                List<Map<String, Object>> xDeath = (List<Map<String, Object>>) headers.get("x-death");
+
+                if(!xDeath.isEmpty()){
+                    Map<String, Object> deathDetails = xDeath.getFirst();
+                    reason = (String) deathDetails.get("reason");
+                    originalQueue = (String) deathDetails.get("queue");
+                }
+            }
+            DlqMessage dlqMessage = new DlqMessage();
+            dlqMessage.setMessagePayload(new String(message.getBody()).replace("\"", ""));
+            dlqMessage.setReason(reason != null ? reason : "Unknown");
+            dlqMessage.setOriginalQueue(originalQueue != null ? originalQueue : "Unknown");
+            dlqMessage.setRetryCount(retryCount);
+            dlqMessage.setReprocessStatus(ReprocessStatus.PENDING);
+            dlqMessage.setTimestamp(LocalDateTime.now());
+            dlqMessage.setRetryCount(0);
+
+            dlqMessageRepository.save(dlqMessage);
+        }
+
+
     }
 
 
