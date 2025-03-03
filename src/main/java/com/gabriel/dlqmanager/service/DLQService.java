@@ -107,14 +107,14 @@ public class DLQService {
     public void reprocess(DlqMessage dlqMessage){
         try{
             rabbitMQDlqProducer.sendDlqMessage(dlqMessage.getMessagePayload(), dlqMessage.getId());
+            dlqMessage.setRetryCount(dlqMessage.getRetryCount() + 1);
+            dlqMessageRepository.save(dlqMessage);
         }
         catch (Exception e){
             dlqMessage.setReprocessStatus(ReprocessStatus.FAILED);
             dlqMessageRepository.save(dlqMessage);
         }
-        finally {
-            dlqMessageRepository.save(dlqMessage);
-        }
+
     }
 
     public Page<DlqMessage> findAll(String reason, String queue, ReprocessStatus reprocessStatus, int page, int size){
