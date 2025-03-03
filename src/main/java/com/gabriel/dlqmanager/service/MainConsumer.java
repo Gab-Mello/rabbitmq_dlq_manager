@@ -26,31 +26,16 @@ public class MainConsumer {
     @RabbitListener(queues = "${rabbitmq.queue.main}" )
     public void processMessage(String message, @Nullable @Header("messageId") Long messageId){
 
-            try {
-            System.out.println("Message received: " + message);
-            System.out.println("Message id: " + messageId);
+        if (random.nextInt(100) < 50) {
+            System.out.println("error: " + message);
+            throw new RuntimeException("Erro no processamento da mensagem!");
+        }
 
-            if (random.nextInt(100) > 1) {
-                System.out.println("error: " + message);
-                throw new RuntimeException("Erro no processamento da mensagem!");
-            }
-
-            if (messageId != null){
-                //Send a message to dlq succeed queue
-                rabbitMQDlqSuccessProducer.sendToSuccessQueue(messageId);
-            }
-
-            } catch (Exception e) {
-
-                if (e instanceof org.springframework.amqp.rabbit.support.ListenerExecutionFailedException ||
-                        e.getCause() instanceof org.springframework.amqp.rabbit.support.ListenerExecutionFailedException){
-
-                    System.out.println("ENTROUUUU: " + e);
-                }
-                else{
-                    throw e;
-                }
-            }
+        if (messageId != null){
+            //Send a message to dlq succeed queue
+            System.out.println("Mandou para os reprocessamentos que deram bom!");
+            rabbitMQDlqSuccessProducer.sendToSuccessQueue(messageId);
+        }
 
     }}
 

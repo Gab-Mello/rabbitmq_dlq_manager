@@ -37,7 +37,6 @@ public class DLQService {
             dlqMessageRepository.save(dlqMessage);
         }
         else {
-
             String reason = null;
             String originalQueue = null;
             int retryCount = 0;
@@ -62,21 +61,25 @@ public class DLQService {
 
             dlqMessageRepository.save(dlqMessage);
         }
-
-
     }
 
+    @RabbitListener(queues = "${rabbitmq.queue.dlqReprocessingSucceeded}")
+    public void updateReprocessStatusToSuccess(Message message){
+        Long messageId = Long.parseLong(new String(message.getBody()));
+        DlqMessage dlqMessage = dlqMessageRepository.findById(messageId).orElseThrow(EntityNotFoundException::new);
+        dlqMessage.setReprocessStatus(ReprocessStatus.SUCCESS);
+        dlqMessageRepository.save(dlqMessage);
+    }
 
     public String reprocessDlqMessage(Long id){
         DlqMessage dlqMessage = dlqMessageRepository.findById(id).orElseThrow(EntityNotFoundException::new);
 
-        if (dlqMessage.getReprocessStatus() != ReprocessStatus.PENDING){
-            return "Message already reprocessed!";
+        if (dlqMessage.getReprocessStatus() == ReprocessStatus.PENDING || dlqMessage.getReprocessStatus() == ReprocessStatus.FAILED){
+            reprocess(dlqMessage);
+            return "Message reprocessed!";
         }
 
-        reprocess(dlqMessage, "fail");
-
-        return "Message reprocessed!";
+        return "Message already reprocessed!";
     }
 
     public String reprocessListOfDlqMessages(List<Long> ids){
@@ -84,7 +87,7 @@ public class DLQService {
 
         for (DlqMessage dlqMessage : dlqMessages){
             if (dlqMessage.getReprocessStatus() == ReprocessStatus.PENDING){
-                reprocess(dlqMessage, "success");
+                reprocess(dlqMessage);
             }
         }
         return "All messages in the list reprocessed!";
@@ -95,20 +98,19 @@ public class DLQService {
 
         for (DlqMessage dlqMessage : dlqMessages){
             if (dlqMessage.getReprocessStatus() == ReprocessStatus.PENDING){
-                reprocess(dlqMessage, "success");
+                reprocess(dlqMessage);
             }
         };
         return "All messages reprocessed!";
     }
 
-    public void reprocess(DlqMessage dlqMessage, String message){
+    public void reprocess(DlqMessage dlqMessage){
         try{
-            rabbitMQDlqProducer.sendDlqMessage(message, dlqMessage.getId());
+            rabbitMQDlqProducer.sendDlqMessage(dlqMessage.getMessagePayload(), dlqMessage.getId());
         }
         catch (Exception e){
             dlqMessage.setReprocessStatus(ReprocessStatus.FAILED);
             dlqMessageRepository.save(dlqMessage);
-            System.out.println("CAIU AQUI");
         }
         finally {
             dlqMessageRepository.save(dlqMessage);
