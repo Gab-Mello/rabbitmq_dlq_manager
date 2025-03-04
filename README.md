@@ -8,15 +8,15 @@
 
 ## Features
 
-- **Message Sending:** Allows sending messages to a configured main queue.
-- **Failure Handling:** Messages that cannot be processed are automatically sent to the DLQ.
+- **Automatic Failure Handling:** Messages that fail after multiple attempts are automatically sent to the DLQ.
 - **DLQ Message Management:**
-  - List messages with details such as failure reason and delivery attempts.
-  - Reprocess messages from the DLQ to the main queue.
-  - Discard unwanted messages.
-- **Monitoring:**
-  - Metrics such as the number of messages in the DLQ, reprocessing rate, and average time of messages in the DLQ.
-- **API Documentation:** Automatic API documentation with Swagger for easy use of REST APIs.
+  - Store failed messages in the database.
+  - List messages with failure details.
+  - Reprocess messages individually, in bulk, or all at once.
+  - Track reprocessing status (`PENDING`, `SUCCESS`, `FAILED`).
+- **Monitoring & Metrics:**
+  - Count total, successful, and failed reprocessed messages.
+  - Calculate success and failure rates.
 
 ## Technologies Used
 
