@@ -12,6 +12,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -132,6 +133,27 @@ public class DLQService {
             throw new IllegalStateException("Only successfully reprocessed messages can be deleted.");
         }
     }
+
+    public Map<String, Object> getDlqMetrics() {
+        long totalMessages = dlqMessageRepository.count();
+        long reprocessedSuccess = dlqMessageRepository.countByReprocessStatus(ReprocessStatus.SUCCESS);
+        long reprocessedFailed = dlqMessageRepository.countByReprocessStatus(ReprocessStatus.FAILED);
+        long pendingMessages = dlqMessageRepository.countByReprocessStatus(ReprocessStatus.PENDING);
+
+        double successRate = totalMessages > 0 ? (double) reprocessedSuccess / totalMessages * 100 : 0;
+        double failureRate = totalMessages > 0 ? (double) reprocessedFailed / totalMessages * 100 : 0;
+
+        Map<String, Object> metrics = new HashMap<>();
+        metrics.put("totalMessages", totalMessages);
+        metrics.put("reprocessedSuccess", reprocessedSuccess);
+        metrics.put("reprocessedFailed", reprocessedFailed);
+        metrics.put("pendingMessages", pendingMessages);
+        metrics.put("successRate", String.format("%.2f", successRate) + "%");
+        metrics.put("failureRate", String.format("%.2f", failureRate) + "%");
+
+        return metrics;
+    }
+
 
 
 }

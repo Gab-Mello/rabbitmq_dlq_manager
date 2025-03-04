@@ -23,4 +23,10 @@ public interface DlqMessageRepository extends JpaRepository<DlqMessage, Long> {
             @Param("reprocessStatus") ReprocessStatus reprocessStatus,
             Pageable pageable
     );
+
+    long count();
+
+    long countByReprocessStatus(ReprocessStatus status);
+
+
 }

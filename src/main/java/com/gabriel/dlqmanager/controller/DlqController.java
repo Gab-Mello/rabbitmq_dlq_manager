@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("dlq")
@@ -45,5 +46,10 @@ public class DlqController {
     @DeleteMapping("delete/{id}")
     public String deleteMessage(@PathVariable Long id){
         return dlqService.deleteMessage(id);
+    }
+
+    @GetMapping("/metrics")
+    public Map<String, Object> getDlqMetrics(){
+        return dlqService.getDlqMetrics();
     }
 }
