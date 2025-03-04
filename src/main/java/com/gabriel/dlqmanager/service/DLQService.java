@@ -121,5 +121,17 @@ public class DLQService {
         return dlqMessageRepository.findMessagesWithFilters(reason, queue, reprocessStatus, PageRequest.of(page, size));
     }
 
+    public String deleteMessage(Long id){
+        DlqMessage dlqMessage = dlqMessageRepository.findById(id).orElseThrow(EntityNotFoundException::new);
+
+        if (dlqMessage.getReprocessStatus() == ReprocessStatus.SUCCESS){
+            dlqMessageRepository.delete(dlqMessage);
+            return ("Successfully deleted!");
+        }
+        else {
+            throw new IllegalStateException("Only successfully reprocessed messages can be deleted.");
+        }
+    }
+
 
 }

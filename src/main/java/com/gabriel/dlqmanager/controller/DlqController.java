@@ -41,4 +41,9 @@ public class DlqController {
     public String reprocessAllMessages(){
         return dlqService.reprocessAllMessages();
     }
+
+    @DeleteMapping("delete/{id}")
+    public String deleteMessage(@PathVariable Long id){
+        return dlqService.deleteMessage(id);
+    }
 }
